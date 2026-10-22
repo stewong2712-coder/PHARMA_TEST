@@ -1,0 +1,594 @@
+<title>PharmaChain Console</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an operations console. Sticky header with role switch, three views (Portal / Patient check / Ledger), two-column work area that stacks on phones. */
+:root {
+  --bg: #f3f6f8;
+  --surface: #ffffff;
+  --sunk: #e8eef2;
+  --line: #d3dde4;
+  --ink: #142630;
+  --ink-2: #4d6270;
+  --accent: #0a6c8f;          /* cold-chain blue */
+  --accent-ink: #ffffff;
+  --accent-soft: #dcedf4;
+  --band: #d9eef0;            /* 2-8 C storage band */
+  --good: #1e7d4f; --good-soft: #dff1e7;
+  --warn: #a8640a; --warn-soft: #f8ebd4;
+  --bad: #b3261e;  --bad-soft: #f8e1df;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d171d; --surface: #13212a; --sunk: #0f1c24; --line: #24394a; --ink: #e2ecf1; --ink-2: #93a9b6;
+  --accent: #4fb3d9; --accent-ink: #062330; --accent-soft: #143444; --band: #133a40;
+  --good: #5cc08e; --good-soft: #143528; --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f07a70; --bad-soft: #3d1a17; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d171d; --surface: #13212a; --sunk: #0f1c24; --line: #24394a; --ink: #e2ecf1; --ink-2: #93a9b6;
+  --accent: #4fb3d9; --accent-ink: #062330; --accent-soft: #143444; --band: #133a40;
+  --good: #5cc08e; --good-soft: #143528; --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f07a70; --bad-soft: #3d1a17; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; padding-block: 10px; }
+.brand { font-family: var(--f-display); font-weight: 700; font-size: 24px; letter-spacing: .02em; display: flex; align-items: baseline; gap: 8px; }
+.brand small { font-family: var(--f-mono); font-weight: 400; font-size: 11px; color: var(--ink-2); letter-spacing: 0; }
+nav.views { display: flex; gap: 4px; margin-left: auto; }
+nav.views button, .role button { font: 600 14px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
+nav.views button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chain { display: flex; gap: 8px; align-items: center; font: 12px var(--f-mono); color: var(--ink-2); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); display: inline-block; }
+
+.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-block: 14px 6px; }
+.label { font: 600 12px var(--f-display); text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+.role { display: flex; flex-wrap: wrap; gap: 4px; }
+.role button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.who { font-size: 13px; color: var(--ink-2); }
+.who code { font-family: var(--f-mono); font-size: 12px; }
+
+main { padding-block: 8px 48px; }
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.stack { display: grid; gap: 16px; }
+h2 { font: 700 20px/1.2 var(--f-display); letter-spacing: .02em; margin: 0 0 10px; text-wrap: balance; }
+h3 { font: 600 15px/1.3 var(--f-body); margin: 0 0 8px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--ink-2); font-size: 13px; }
+
+.batches { display: grid; gap: 8px; }
+.bitem { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.bitem[aria-current="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.bitem .lot { font-family: var(--f-mono); font-size: 13px; font-weight: 500; }
+.bitem .meta { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 600 12px var(--f-display); text-transform: uppercase; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.pill.Received, .pill.Manufactured { background: var(--good-soft); color: var(--good); }
+.pill.InTransit { background: var(--accent-soft); color: var(--accent); }
+.pill.Quarantined { background: var(--warn-soft); color: var(--warn); }
+.pill.Recalled { background: var(--bad-soft); color: var(--bad); }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin: 10px 0 14px; }
+.fact .k { font: 600 11px var(--f-display); text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+.fact .v { font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mono { font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere; }
+
+.chartbox { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunk); padding: 8px; }
+svg text { font-family: var(--f-mono); }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.timeline li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; position: relative; padding-bottom: 12px; }
+.timeline li::before { content: ""; position: absolute; left: 7px; top: 14px; bottom: 0; width: 2px; background: var(--line); }
+.timeline li:last-child::before { display: none; }
+.timeline .node { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--accent); background: var(--surface); margin-top: 2px; }
+.timeline .node.warn { border-color: var(--warn); } .timeline .node.bad { border-color: var(--bad); }
+.timeline .t { font-size: 14px; } .timeline .d { font-size: 12px; color: var(--ink-2); }
+
+form { display: grid; gap: 10px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
+input, select { font: 14px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 7px 9px; width: 100%; min-width: 0; }
+input.mono { font-family: var(--f-mono); }
+.btn { font: 700 14px var(--f-body); border-radius: var(--r); padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.note { font-size: 13px; padding: 8px 10px; border-radius: var(--r); background: var(--sunk); }
+.note.ok { background: var(--good-soft); color: var(--good); } .note.err { background: var(--bad-soft); color: var(--bad); } .note.warn { background: var(--warn-soft); color: var(--warn); }
+.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: min(420px, calc(100vw - 32px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: var(--r); font-size: 14px; z-index: 20; }
+
+/* Patient view */
+.patient { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+.phone { border: 1px solid var(--line); border-radius: 22px; background: var(--surface); padding: 18px; display: grid; gap: 14px; }
+.samples { display: flex; flex-wrap: wrap; gap: 6px; }
+.samples button { font: 13px var(--f-body); border: 1px dashed var(--line); background: var(--sunk); color: var(--ink); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.verdict { border-radius: 14px; padding: 18px; display: grid; gap: 8px; }
+.verdict .big { font: 700 32px/1.05 var(--f-display); letter-spacing: .01em; }
+.verdict.ok { background: var(--good-soft); color: var(--good); }
+.verdict.warn { background: var(--warn-soft); color: var(--warn); }
+.verdict.bad { background: var(--bad-soft); color: var(--bad); }
+.verdict .detail { color: var(--ink); font-size: 14px; }
+.gs1 { font: 12px var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* Ledger */
+.blocks { display: grid; gap: 10px; }
+.block { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.block .head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.block .num { font: 700 18px var(--f-display); }
+.block table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.block td { padding: 4px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+.block td:first-child { font-family: var(--f-mono); color: var(--accent); white-space: nowrap; }
+.seals { display: flex; gap: 3px; align-items: center; }
+.seal { width: 10px; height: 10px; border-radius: 2px; background: var(--line); }
+.seal.on { background: var(--good); }
+.tablewrap { overflow-x: auto; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } nav.views { margin-left: 0; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">PharmaChain <small>consortium console · prototype</small></div>
+    <div class="chain"><span class="dot" aria-hidden="true"></span><span id="chainInfo">QBFT · 7 validators</span></div>
+    <nav class="views" aria-label="Views">
+      <button data-view="portal" aria-pressed="true">Stakeholder portal</button>
+      <button data-view="patient" aria-pressed="false">Patient check</button>
+      <button data-view="ledger" aria-pressed="false">Ledger</button>
+      <a href="live.html" style="font:600 14px var(--f-body);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:6px 12px;border-radius:var(--r);text-decoration:none">Live blockchain</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <section id="v-portal">
+    <div class="sub">
+      <span class="label">Acting as</span>
+      <div class="role" id="roles"></div>
+      <span class="who" id="who"></span>
+    </div>
+    <main class="grid">
+      <div class="stack">
+        <div class="panel" id="actionPanel"></div>
+        <div class="panel">
+          <h2>Batches</h2>
+          <div class="batches" id="batchList"></div>
+        </div>
+      </div>
+      <div class="panel" id="detail"></div>
+    </main>
+  </section>
+
+  <section id="v-patient" hidden>
+    <main class="patient">
+      <div class="phone">
+        <div>
+          <div class="label">Check your medicine</div>
+          <h2 style="margin:4px 0 0">Scan the code on the pack</h2>
+          <p class="muted">The camera is not available in this demo, so type the details printed under the barcode or pick a sample pack.</p>
+        </div>
+        <div class="samples" id="samples"></div>
+        <form id="verifyForm">
+          <div class="row2">
+            <label for="vGtin">GTIN (01)<input id="vGtin" class="mono" required></label>
+            <label for="vLot">Lot (10)<input id="vLot" class="mono" required></label>
+          </div>
+          <label for="vSerial">Serial (21)<input id="vSerial" class="mono" required></label>
+          <button class="btn" type="submit">Check this pack</button>
+        </form>
+        <div id="verdict"></div>
+      </div>
+      <p class="muted">This check reads the ledger through a public endpoint. It needs no account and costs nothing, and the app never stores who scanned.</p>
+    </main>
+  </section>
+
+  <section id="v-ledger" hidden>
+    <main>
+      <div class="sub"><h2 style="margin:0">Blocks</h2><span class="muted" id="ledgerInfo"></span></div>
+      <div class="blocks" id="blocks"></div>
+    </main>
+  </section>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// In-browser ledger that mirrors contracts/PharmaChain.sol (same rules, same
+// verdicts). Blocks are hash-linked with SHA-256 and sealed by a simulated
+// QBFT quorum (5 of 7 validators). Seed data comes from scripts/simulate.js.
+// All organisation names are fictional.
+// ---------------------------------------------------------------------------
+const ACTORS = {
+  regulator:    { label: "Regulator",    org: "National Medicines Regulator", addr: "0xf39F…2266", role: "REGULATOR" },
+  manufacturer: { label: "Manufacturer", org: "Lumora Biologics Ltd",         addr: "0x7099…79C8", role: "MANUFACTURER" },
+  distributor:  { label: "Distributor",  org: "ColdRoute Distribution",       addr: "0x3C44…93BC", role: "DISTRIBUTOR" },
+  pharmacy:     { label: "Pharmacy",     org: "Westside Community Pharmacy",  addr: "0x90F7…b906", role: "PHARMACY" },
+  inspector:    { label: "QA inspector", org: "Independent QA Services",      addr: "0x9965…A4dc", role: "INSPECTOR" },
+};
+const VALIDATORS = ["Regulator", "Lumora Biologics", "Arden Pharma", "ColdRoute", "Meridian Wholesale", "Pharmacy Assoc.", "Auditor"];
+const NEXT = { manufacturer: ["distributor"], distributor: ["distributor", "pharmacy"] };
+const GTIN = "05099999000013";
+const WINDOW = 900;
+const TEL_A = [[5,5.4],[5.2,5.7],[5.4,5.9],[5.6,6],[5.5,6],[5.4,5.9],[5.1,5.6],[4.8,5.3],[4.6,5],[4.2,4.7],[4.1,9.1],[4,4.4],[4.1,4.5],[4.1,4.6],[4.4,4.9],[4.8,5.2],[5,5.6],[5.4,5.7],[5.6,5.9],[5.6,6],[5.6,5.9],[5.3,5.8],[5,5.4],[4.6,5.3]];
+const TEL_B = [[5,5.4],[5.2,5.7],[5.4,5.9],[5.6,6],[5.5,6],[5.4,5.9],[5.1,5.6],[4.8,5.3],[4.6,5],[4.2,4.7],[4.1,4.5],[4,4.4],[4.1,9.3],[9.4,11.7],[11.8,13.4],[10.4,12.6],[5.2,10.2],[5.4,5.7],[5.6,5.9],[5.6,6],[5.6,5.9],[5.3,5.8],[5,5.4],[4.6,5.3]];
+
+const state = { role: "manufacturer", view: "portal", selected: null, batches: {}, blocks: [], pending: [], dispensed: new Set(), serialRoots: {}, clock: Date.parse("2026-10-12T06:00:00Z") };
+
+// ---- crypto helpers --------------------------------------------------------
+const enc = new TextEncoder();
+async function sha256Hex(data) {
+  const buf = await crypto.subtle.digest("SHA-256", typeof data === "string" ? enc.encode(data) : data);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function merkle(leaves) {
+  let level = await Promise.all(leaves.map(l => sha256Hex("leaf:" + l)));
+  let depth = 0;
+  while (level.length > 1) {
+    const next = [];
+    for (let i = 0; i < level.length; i += 2) {
+      const a = level[i], b = level[i + 1] ?? level[i];
+      next.push(await sha256Hex(a < b ? a + b : b + a));
+    }
+    level = next; depth++;
+  }
+  return { root: "0x" + level[0], depth };
+}
+const short = h => h.length > 18 ? h.slice(0, 10) + "…" + h.slice(-6) : h;
+const fmtT = ts => new Date(ts).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+const fmtDate = ts => new Date(ts).toISOString().slice(0, 10);
+const serialsFor = (prefix, n) => Array.from({ length: n }, (_, i) => `SN${prefix + i}`);
+
+// ---- chain -----------------------------------------------------------------
+async function sealBlock() {
+  if (!state.pending.length) return;
+  const prev = state.blocks.length ? state.blocks[state.blocks.length - 1].hash : "0".repeat(64);
+  const number = state.blocks.length + 1;
+  const txs = state.pending.splice(0);
+  for (const t of txs) t.hash = "0x" + (await sha256Hex(JSON.stringify({ ...t, number }))).slice(0, 64);
+  const hash = await sha256Hex(prev + JSON.stringify(txs.map(t => t.hash)) + number);
+  const signers = VALIDATORS.map((v, i) => i !== (number % 7) && i !== ((number + 3) % 7)); // 5 of 7 seal
+  state.blocks.push({ number, prev, hash, txs, at: state.clock, signers });
+}
+function tx(fn, from, summary, ok = true) { state.pending.push({ fn, from, summary, ok, at: state.clock }); }
+
+// ---- contract rules (mirror of PharmaChain.sol) ----------------------------
+function requireRole(role) { if (state.role !== role) throw new Error(`${ACTORS[state.role].label} is not allowed to do this.`); }
+function batchId(gtin, lot) { return `${gtin}|${lot}`; }
+
+async function createBatch(input) {
+  requireRole("manufacturer");
+  const id = batchId(input.gtin, input.lot);
+  if (state.batches[id]) throw new Error("A batch with this GTIN and lot already exists.");
+  if (input.min >= input.max) throw new Error("Minimum temperature must be below the maximum.");
+  if (input.qty < 1) throw new Error("Quantity must be at least 1.");
+  if (Date.parse(input.expiry) <= state.clock) throw new Error("Expiry must be in the future.");
+  const serials = serialsFor(input.serialStart, input.qty);
+  const { root, depth } = await merkle(serials);
+  const docsCid = "bafkrei" + (await sha256Hex(input.docText || input.lot)).slice(0, 52);
+  state.batches[id] = {
+    id, gtin: input.gtin, lot: input.lot, product: input.product, expiry: Date.parse(input.expiry), qty: input.qty, dispensed: 0,
+    min: input.min, max: input.max, tol: input.tol * 60, exc: 0, serialRoot: root, proofDepth: depth, serials: new Set(serials),
+    docs: [{ type: "Certificate of analysis (encrypted)", cid: docsCid }], status: "Manufactured", custodian: "manufacturer", pending: null,
+    telemetry: [], custody: [{ from: null, to: "manufacturer", at: state.clock, doc: null }], log: [{ at: state.clock, t: "Batch created", d: `${input.qty} packs · ${input.min}–${input.max} °C`, k: "" }],
+  };
+  tx("createBatch", "manufacturer", `${input.lot} · ${input.qty} packs · root ${short(root)}`);
+  await sealBlock();
+  return id;
+}
+async function initiateTransfer(id, toRole) {
+  const b = state.batches[id];
+  if (ACTORS[b.custodian] && b.custodian !== state.role) throw new Error("Only the current custodian can ship this batch.");
+  if (!["Manufactured", "Received"].includes(b.status)) throw new Error(`Batch is ${b.status}; it cannot be shipped.`);
+  if (state.clock >= b.expiry) throw new Error("Batch has expired.");
+  if (!(NEXT[state.role] || []).includes(toRole)) throw new Error(`${ACTORS[state.role].label} cannot ship to ${ACTORS[toRole].label}.`);
+  const docHash = "0x" + (await sha256Hex(`T3|${id}|${state.role}|${toRole}|${state.clock}`));
+  b.pending = { to: toRole, doc: docHash }; b.status = "InTransit";
+  b.log.push({ at: state.clock, t: `Shipped to ${ACTORS[toRole].org}`, d: `T3 statement ${short(docHash)}`, k: "" });
+  tx("initiateTransfer", state.role, `${b.lot} → ${ACTORS[toRole].org}`);
+  await sealBlock();
+}
+async function acceptTransfer(id) {
+  const b = state.batches[id];
+  if (b.status !== "InTransit") throw new Error(`Batch is ${b.status}; it cannot be accepted.`);
+  if (!b.pending || b.pending.to !== state.role) throw new Error("This consignment is not addressed to you.");
+  b.custody.push({ from: b.custodian, to: state.role, at: state.clock, doc: b.pending.doc });
+  b.custodian = state.role; b.pending = null; b.status = "Received";
+  b.log.push({ at: state.clock, t: `Received by ${ACTORS[state.role].org}`, d: "Custody confirmed by receiver", k: "" });
+  tx("acceptTransfer", state.role, `${b.lot} accepted`);
+  await sealBlock();
+}
+async function recordTrip(id, peak, minutes) {
+  const b = state.batches[id];
+  if (b.status !== "InTransit") throw new Error("Telemetry is recorded while a batch is in transit.");
+  const windows = 24;
+  const startIdx = 10, outWindows = Math.ceil(minutes / 15);
+  for (let i = 0; i < windows; i++) {
+    let lo = 4.2 + 0.8 * Math.sin(i / 3), hi = lo + 0.5;
+    if (peak > b.max && i >= startIdx && i < startIdx + outWindows) { lo = Math.max(lo, b.max - 1); hi = peak; }
+    const w = { start: state.clock + i * WINDOW * 1000, min: +lo.toFixed(1), max: +hi.toFixed(1), nonce: b.telemetry.length + 1 };
+    b.telemetry.push(w);
+    tx("recordTelemetry", "gateway", `${b.lot} · window ${w.nonce} · ${w.min}–${w.max} °C · logger sig ✓`);
+    applyWindow(b, w);
+  }
+  state.clock += windows * WINDOW * 1000;
+  await sealBlock();
+}
+function applyWindow(b, w) {
+  if (w.min < b.min || w.max > b.max) {
+    b.exc += WINDOW;
+    b.log.push({ at: w.start, t: "Temperature excursion", d: `${w.max} °C peak · ${b.exc / 60} min cumulative of ${b.tol / 60} allowed`, k: "warn" });
+    if (b.exc > b.tol && !["Quarantined", "Recalled"].includes(b.status)) {
+      b.status = "Quarantined"; b.pending = null;
+      b.log.push({ at: w.start, t: "Quarantined automatically", d: "Cumulative excursion exceeded tolerance", k: "bad" });
+      tx("BatchQuarantined", "contract", `${b.lot} · excursion ${b.exc / 60} min`);
+    }
+  }
+}
+async function release(id) {
+  requireRole("inspector");
+  const b = state.batches[id];
+  if (b.status !== "Quarantined") throw new Error("Only quarantined batches can be released.");
+  b.status = "Received"; b.exc = 0;
+  const cid = "bafkrei" + (await sha256Hex("assessment" + id + state.clock)).slice(0, 52);
+  b.docs.push({ type: "Stability assessment", cid });
+  b.log.push({ at: state.clock, t: "Released by QA", d: `Assessment ${short(cid)}`, k: "" });
+  tx("releaseFromQuarantine", "inspector", `${b.lot} released`); await sealBlock();
+}
+async function quarantine(id) {
+  requireRole("inspector");
+  const b = state.batches[id];
+  if (["Quarantined", "Recalled"].includes(b.status)) throw new Error(`Batch is already ${b.status}.`);
+  b.status = "Quarantined"; b.pending = null;
+  b.log.push({ at: state.clock, t: "Quarantined by QA", d: "Physical inspection finding", k: "bad" });
+  tx("quarantine", "inspector", `${b.lot} quarantined`); await sealBlock();
+}
+async function recall(id) {
+  const b = state.batches[id];
+  if (!(state.role === "regulator" || state.role === "manufacturer")) throw new Error("Only the manufacturer or the regulator can recall.");
+  if (b.status === "Recalled") throw new Error("Batch is already recalled.");
+  b.status = "Recalled"; b.pending = null;
+  b.log.push({ at: state.clock, t: "Recalled", d: `By ${ACTORS[state.role].org}`, k: "bad" });
+  tx("recall", state.role, `${b.lot} recalled`); await sealBlock();
+}
+async function dispense(id, serial) {
+  requireRole("pharmacy");
+  const b = state.batches[id];
+  if (b.custodian !== "pharmacy") throw new Error("This pharmacy does not hold the batch.");
+  if (b.status !== "Received") throw new Error(`Batch is ${b.status}; do not dispense.`);
+  if (state.clock >= b.expiry) throw new Error("Batch has expired.");
+  if (!b.serials.has(serial)) throw new Error("Serial is not part of this batch (Merkle proof fails). Possible counterfeit.");
+  const key = id + "|" + serial;
+  if (state.dispensed.has(key)) throw new Error("This serial was already dispensed. Possible cloned code.");
+  state.dispensed.add(key); b.dispensed++;
+  if (b.dispensed === b.qty) b.status = "Exhausted";
+  b.log.push({ at: state.clock, t: `Dispensed ${serial}`, d: `${b.dispensed} of ${b.qty} packs dispensed`, k: "" });
+  tx("dispense", "pharmacy", `${b.lot} · ${serial}`); await sealBlock();
+}
+function verifyPack(gtin, lot, serial) {
+  const b = state.batches[batchId(gtin.trim(), lot.trim())];
+  if (!b) return { v: "UnknownBatch" };
+  if (!b.serials.has(serial.trim())) return { v: "UnknownSerial", b };
+  if (b.status === "Recalled") return { v: "Recalled", b };
+  if (b.status === "Quarantined") return { v: "Quarantined", b };
+  if (state.clock >= b.expiry) return { v: "Expired", b };
+  if (state.dispensed.has(b.id + "|" + serial.trim())) return { v: "GenuineAlreadyDispensed", b };
+  return { v: "Genuine", b };
+}
+
+// ---- seed: reproduce the simulate.js run -----------------------------------
+async function seed() {
+  const prevRole = state.role;
+  state.role = "manufacturer";
+  for (const r of ["MANUFACTURER", "DISTRIBUTOR", "PHARMACY", "ORACLE", "INSPECTOR"]) tx("grantRole", "regulator", `${r}_ROLE granted`);
+  await sealBlock();
+  const base = { gtin: GTIN, product: "Insulin glargine 100 U/mL pen", expiry: "2028-04-05", qty: 1000, min: 2, max: 8, tol: 30, serialStart: 500000, docText: "CoA insulin" };
+  const a = await createBatch({ ...base, lot: "INS-2026-0412" });
+  const b = await createBatch({ ...base, lot: "INS-2026-0413" });
+  for (const id of [a, b]) { tx("bindSensor", "manufacturer", `${state.batches[id].lot} · logger bound`); }
+  await sealBlock();
+  for (const id of [a, b]) await initiateTransfer(id, "distributor");
+  for (const [id, series] of [[a, TEL_A], [b, TEL_B]]) {
+    const bb = state.batches[id];
+    series.forEach(([lo, hi], i) => {
+      const w = { start: state.clock + i * WINDOW * 1000, min: lo, max: hi, nonce: i + 1 };
+      bb.telemetry.push(w); tx("recordTelemetry", "gateway", `${bb.lot} · window ${i + 1} · ${lo}–${hi} °C · logger sig ✓`); applyWindow(bb, w);
+    });
+  }
+  state.clock += 24 * WINDOW * 1000;
+  await sealBlock();
+  state.role = "distributor"; await acceptTransfer(a); await initiateTransfer(a, "pharmacy");
+  state.clock += 3600e3;
+  state.role = "pharmacy"; await acceptTransfer(a); await dispense(a, "SN500417");
+  state.role = prevRole; state.selected = a;
+}
+
+// ---- rendering --------------------------------------------------------------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const statusLabel = s => ({ InTransit: "In transit" }[s] || s);
+let toastTimer;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3600); }
+async function act(fn, okMsg) {
+  try { await fn(); if (okMsg) toast(okMsg); }
+  catch (e) { toast(e.message); tx("revert", state.role, e.message, false); }
+  render();
+}
+
+function renderRoles() {
+  $("#roles").innerHTML = Object.entries(ACTORS).map(([k, a]) => `<button data-role="${k}" aria-pressed="${state.role === k}">${a.label}</button>`).join("");
+  const a = ACTORS[state.role];
+  $("#who").innerHTML = `${esc(a.org)} · <code>${a.addr}</code> · ${a.role}_ROLE`;
+}
+function renderList() {
+  $("#batchList").innerHTML = Object.values(state.batches).map(b => `
+    <button class="bitem" data-batch="${esc(b.id)}" aria-current="${state.selected === b.id}">
+      <span class="lot">${esc(b.lot)}</span><span class="pill ${b.status}">${statusLabel(b.status)}</span>
+      <span class="meta">${esc(b.product)} · held by ${esc(ACTORS[b.custodian]?.org || "")}${b.pending ? " → " + esc(ACTORS[b.pending.to].org) : ""}</span>
+    </button>`).join("") || `<p class="muted">No batches yet.</p>`;
+}
+function tempChart(b) {
+  const W = 640, H = 220, L = 40, R = 12, T = 14, B = 30;
+  const n = Math.max(b.telemetry.length, 1);
+  const yMin = 0, yMax = Math.max(14, Math.ceil(Math.max(...b.telemetry.map(w => w.max), 0) + 1));
+  const x = i => L + (i + 0.5) * (W - L - R) / n, y = v => T + (yMax - v) / (yMax - yMin) * (H - T - B);
+  const ticks = []; for (let v = 0; v <= yMax; v += 2) ticks.push(v);
+  const bw = Math.max(3, (W - L - R) / n * 0.55);
+  const bars = b.telemetry.map((w, i) => {
+    const out = w.min < b.min || w.max > b.max;
+    return `<rect x="${x(i) - bw / 2}" y="${y(w.max)}" width="${bw}" height="${Math.max(2, y(w.min) - y(w.max))}" rx="2" fill="${out ? "var(--bad)" : "var(--accent)"}"><title>Window ${i + 1}: ${w.min}–${w.max} °C</title></rect>`;
+  }).join("");
+  const hours = []; for (let i = 0; i < n; i += 4) hours.push(`<text x="${x(i)}" y="${H - 10}" font-size="10" text-anchor="middle" fill="var(--ink-2)">${i / 4}h</text>`);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px" role="img" aria-label="Temperature per 15-minute window against the ${b.min} to ${b.max} °C range">
+    <rect x="${L}" y="${y(b.max)}" width="${W - L - R}" height="${y(b.min) - y(b.max)}" fill="var(--band)"/>
+    ${ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3}" font-size="10" text-anchor="end" fill="var(--ink-2)">${v}</text>`).join("")}
+    <text x="${W - R - 4}" y="${y(b.max) + 12}" font-size="10" text-anchor="end" fill="var(--ink-2)">storage range ${b.min}–${b.max} °C</text>
+    ${bars}${hours}
+    <text x="4" y="${T + 4}" font-size="10" fill="var(--ink-2)">°C</text>
+  </svg>`;
+}
+function renderDetail() {
+  const b = state.batches[state.selected];
+  if (!b) { $("#detail").innerHTML = `<p class="muted">Select a batch.</p>`; return; }
+  const excPct = Math.min(100, Math.round(b.exc / b.tol * 100));
+  $("#detail").innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+      <h2 style="margin:0">${esc(b.product)}</h2><span class="pill ${b.status}">${statusLabel(b.status)}</span>
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="k">GTIN · Lot</div><div class="v mono">${b.gtin} · ${esc(b.lot)}</div></div>
+      <div class="fact"><div class="k">Expiry</div><div class="v">${fmtDate(b.expiry)}</div></div>
+      <div class="fact"><div class="k">Packs dispensed</div><div class="v">${b.dispensed.toLocaleString()} / ${b.qty.toLocaleString()}</div></div>
+      <div class="fact"><div class="k">Excursion used</div><div class="v" style="color:${b.exc > b.tol ? "var(--bad)" : b.exc ? "var(--warn)" : "var(--good)"}">${b.exc / 60} of ${b.tol / 60} min (${excPct}%)</div></div>
+      <div class="fact"><div class="k">Custodian</div><div class="v">${esc(ACTORS[b.custodian].org)}</div></div>
+      <div class="fact"><div class="k">Serial Merkle root</div><div class="v mono" title="${b.serialRoot}">${short(b.serialRoot)} · proof ${b.proofDepth} hashes</div></div>
+    </div>
+    <h3>Cold-chain record (signed 15-minute windows)</h3>
+    ${b.telemetry.length ? `<div class="chartbox">${tempChart(b)}</div>` : `<p class="note">No telemetry yet. A data-logger reports once the batch is shipped.</p>`}
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:14px">
+      <div><h3>History</h3><ol class="timeline">${b.log.map(e => `<li><span class="node ${e.k}"></span><div><div class="t">${esc(e.t)}</div><div class="d">${fmtT(e.at)} · ${esc(e.d)}</div></div></li>`).join("")}</ol></div>
+      <div><h3>Documents on IPFS</h3>${b.docs.map(d => `<p><span class="muted">${esc(d.type)}</span><br><span class="mono">${d.cid}</span></p>`).join("")}
+        <h3>Custody hand-overs</h3>${b.custody.slice(1).map(c => `<p class="muted">${esc(ACTORS[c.from].org)} → ${esc(ACTORS[c.to].org)}<br><span class="mono">T3 ${short(c.doc)}</span></p>`).join("") || `<p class="muted">Still with the manufacturer.</p>`}</div>
+    </div>`;
+}
+function renderActions() {
+  const r = state.role, b = state.batches[state.selected];
+  let h = "";
+  if (r === "manufacturer") {
+    h = `<h2>Register a batch</h2>
+      <form id="createForm">
+        <label for="cProduct">Product<input id="cProduct" value="Insulin glargine 100 U/mL pen"></label>
+        <div class="row2"><label for="cGtin">GTIN<input id="cGtin" class="mono" value="${GTIN}"></label><label for="cLot">Lot<input id="cLot" class="mono" value="INS-2026-${String(414 + Object.keys(state.batches).length - 2).padStart(4, "0")}"></label></div>
+        <div class="row2"><label for="cExp">Expiry<input id="cExp" type="date" value="2028-06-30"></label><label for="cQty">Packs<input id="cQty" type="number" min="1" max="5000" value="500"></label></div>
+        <div class="row2"><label for="cMin">Min °C<input id="cMin" type="number" step="0.5" value="2"></label><label for="cMax">Max °C<input id="cMax" type="number" step="0.5" value="8"></label></div>
+        <label for="cTol">Excursion tolerance (minutes)<input id="cTol" type="number" min="0" value="30"></label>
+        <label for="cDoc">Certificate of analysis (hashed in your browser, not uploaded)<input id="cDoc" type="file"></label>
+        <button class="btn" type="submit">Register batch</button>
+      </form>`;
+    if (b && b.custodian === "manufacturer") h += `<hr style="border:0;border-top:1px solid var(--line);margin:14px 0"><div class="actions"><button class="btn ghost" data-act="ship:distributor">Ship ${esc(b.lot)} to distributor</button></div>`;
+    if (b) h += `<div class="actions" style="margin-top:10px"><button class="btn danger" data-act="recall">Recall ${esc(b.lot)}</button></div>`;
+  } else if (r === "distributor") {
+    const inbound = Object.values(state.batches).filter(x => x.pending?.to === "distributor");
+    h = `<h2>Distribution desk</h2>
+      <h3>Inbound consignments</h3>${inbound.map(x => `<div class="actions" style="margin-bottom:8px"><button class="btn" data-act="accept" data-id="${esc(x.id)}">Accept ${esc(x.lot)}</button></div>`).join("") || `<p class="muted">Nothing waiting for you.</p>`}
+      ${b && b.custodian === "distributor" && b.status === "Received" ? `<div class="actions"><button class="btn ghost" data-act="ship:pharmacy">Ship ${esc(b.lot)} to pharmacy</button></div>` : ""}
+      ${b && b.status === "InTransit" ? `<h3 style="margin-top:14px">Simulate the road leg for ${esc(b.lot)}</h3>
+        <form id="tripForm"><div class="row2"><label for="tPeak">Peak temperature °C<input id="tPeak" type="number" step="0.1" value="11.5"></label><label for="tMin">Minutes above range<input id="tMin" type="number" min="0" step="15" value="45"></label></div>
+        <p class="muted">The gateway sends 24 signed 15-minute windows. Set the peak inside 2–8 °C for a clean trip.</p>
+        <button class="btn" type="submit">Run six-hour trip</button></form>` : ""}`;
+  } else if (r === "pharmacy") {
+    const inbound = Object.values(state.batches).filter(x => x.pending?.to === "pharmacy");
+    h = `<h2>Pharmacy counter</h2>
+      ${inbound.map(x => `<div class="actions" style="margin-bottom:8px"><button class="btn" data-act="accept" data-id="${esc(x.id)}">Accept ${esc(x.lot)}</button></div>`).join("")}
+      <form id="dispForm"><label for="dSerial">Scan pack serial for ${b ? esc(b.lot) : "selected batch"}<input id="dSerial" class="mono" value="SN500418"></label>
+      <p class="muted">Try SN500417 (already dispensed) or SN999999 (not in this batch).</p>
+      <button class="btn" type="submit">Dispense</button></form>`;
+  } else if (r === "inspector") {
+    h = `<h2>Quality decisions</h2>${b ? `<p>Selected: <span class="mono">${esc(b.lot)}</span> · <span class="pill ${b.status}">${statusLabel(b.status)}</span></p>
+      <div class="actions"><button class="btn" data-act="release" ${b.status !== "Quarantined" ? "disabled" : ""}>Release after assessment</button><button class="btn ghost" data-act="quarantine" ${["Quarantined", "Recalled"].includes(b.status) ? "disabled" : ""}>Quarantine</button></div>` : ""}`;
+  } else if (r === "regulator") {
+    h = `<h2>Regulator</h2><p class="muted">Admits members, runs a validator, and can recall any batch.</p>
+      <div class="tablewrap"><table style="width:100%;font-size:13px;border-collapse:collapse">${Object.values(ACTORS).map(a => `<tr><td style="padding:4px 0">${esc(a.org)}</td><td class="mono" style="text-align:right">${a.role}</td></tr>`).join("")}</table></div>
+      ${b ? `<div class="actions" style="margin-top:12px"><button class="btn danger" data-act="recall">Recall ${esc(b.lot)}</button></div>` : ""}`;
+  }
+  $("#actionPanel").innerHTML = h;
+}
+function renderPatient() {
+  const samples = [
+    ["Genuine pack", GTIN, "INS-2026-0412", "SN500123"],
+    ["Already dispensed", GTIN, "INS-2026-0412", "SN500417"],
+    ["Counterfeit serial", GTIN, "INS-2026-0412", "SN999999"],
+    ["Heat-damaged lot", GTIN, "INS-2026-0413", "SN500003"],
+  ];
+  $("#samples").innerHTML = samples.map(s => `<button type="button" data-sample='${JSON.stringify(s.slice(1))}'>${s[0]}</button>`).join("");
+}
+function showVerdict(r) {
+  const map = {
+    Genuine: ["ok", "Genuine medicine", "This pack is registered by its manufacturer, has not been dispensed before, and its cold chain stayed within limits."],
+    GenuineAlreadyDispensed: ["warn", "Already dispensed", "This code was handed out to a patient before. If you just received it from your pharmacy, that is expected. If you bought it elsewhere, the code may have been copied. Ask your pharmacist."],
+    UnknownSerial: ["bad", "Not recognised", "This serial number is not part of the batch. Do not use it. Return it to the pharmacy and report it to the regulator."],
+    UnknownBatch: ["bad", "Not recognised", "No batch with this product number and lot exists. Do not use it."],
+    Recalled: ["bad", "Recalled", "This batch has been recalled. Do not use it. Return it to your pharmacy."],
+    Quarantined: ["bad", "Do not use", "This batch is on hold because its storage temperature went outside the safe range. Return it to your pharmacy."],
+    Expired: ["bad", "Expired", "This medicine is past its expiry date."],
+  };
+  const [k, big, text] = map[r.v];
+  const b = r.b;
+  $("#verdict").innerHTML = `<div class="verdict ${k}" role="status"><div class="big">${big}</div><div class="detail">${text}</div>
+    ${b ? `<div class="detail muted">${esc(b.product)} · lot ${esc(b.lot)} · expires ${fmtDate(b.expiry)} · made by ${esc(ACTORS.manufacturer.org)} · temperature excursions recorded: ${b.exc ? b.exc / 60 + " min" : "none"}</div>` : ""}</div>`;
+}
+function renderLedger() {
+  $("#ledgerInfo").textContent = `${state.blocks.length} blocks · ${state.blocks.reduce((s, b) => s + b.txs.length, 0)} transactions · each block sealed by at least 5 of 7 validators`;
+  $("#blocks").innerHTML = state.blocks.slice().reverse().map(bl => `
+    <div class="block"><div class="head"><span class="num">#${bl.number}</span><span class="mono" title="${bl.hash}">hash 0x${short(bl.hash)}</span><span class="mono muted" title="${bl.prev}">prev 0x${short(bl.prev)}</span>
+      <span class="seals" title="QBFT commit seals">${bl.signers.map((s, i) => `<span class="seal ${s ? "on" : ""}" title="${VALIDATORS[i]}${s ? " sealed" : " not in quorum"}"></span>`).join("")}<span class="muted" style="margin-left:6px">${bl.signers.filter(Boolean).length}/7</span></span></div>
+      <div class="tablewrap"><table>${bl.txs.map(t => `<tr><td>${t.fn}</td><td>${esc(t.summary)}</td><td class="muted" style="white-space:nowrap">${esc(ACTORS[t.from]?.label || t.from)}</td></tr>`).join("")}</table></div></div>`).join("");
+}
+function render() {
+  document.querySelectorAll("nav.views button").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === state.view));
+  for (const v of ["portal", "patient", "ledger"]) $("#v-" + v).hidden = state.view !== v;
+  $("#chainInfo").textContent = `QBFT · 7 validators · block #${state.blocks.length}`;
+  renderRoles(); renderList(); renderDetail(); renderActions(); renderLedger();
+}
+
+// ---- events -----------------------------------------------------------------
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.view) { state.view = t.dataset.view; render(); return; }
+  if (t.dataset.role) { state.role = t.dataset.role; render(); return; }
+  if (t.dataset.batch) { state.selected = t.dataset.batch; render(); return; }
+  if (t.dataset.sample) { const [g, l, s] = JSON.parse(t.dataset.sample); $("#vGtin").value = g; $("#vLot").value = l; $("#vSerial").value = s; showVerdict(verifyPack(g, l, s)); return; }
+  const a = t.dataset.act; if (!a) return;
+  const id = t.dataset.id || state.selected;
+  if (a.startsWith("ship:")) act(() => initiateTransfer(id, a.split(":")[1]), "Shipment recorded. Waiting for the receiver to confirm.");
+  if (a === "accept") act(async () => { await acceptTransfer(id); state.selected = id; }, "Custody accepted and sealed in a new block.");
+  if (a === "release") act(() => release(id), "Batch released. Assessment linked on IPFS.");
+  if (a === "quarantine") act(() => quarantine(id), "Batch quarantined. Every pack now shows Do not use.");
+  if (a === "recall") act(() => recall(id), "Recall recorded. Every pack of this lot now shows Recalled.");
+});
+document.addEventListener("submit", async e => {
+  e.preventDefault();
+  if (e.target.id === "createForm") {
+    const f = $("#cDoc").files[0];
+    const docText = f ? await sha256Hex(await f.arrayBuffer()) : $("#cLot").value + Date.now();
+    act(async () => { state.selected = await createBatch({ gtin: $("#cGtin").value.trim(), lot: $("#cLot").value.trim(), product: $("#cProduct").value.trim(), expiry: $("#cExp").value, qty: +$("#cQty").value, min: +$("#cMin").value, max: +$("#cMax").value, tol: +$("#cTol").value, serialStart: 600000 + Object.keys(state.batches).length * 10000, docText }); }, "Batch registered. Serial Merkle root and CoA CID are on-chain.");
+  }
+  if (e.target.id === "tripForm") act(() => recordTrip(state.selected, +$("#tPeak").value, +$("#tMin").value), "Trip telemetry recorded from 24 signed windows.");
+  if (e.target.id === "dispForm") act(() => dispense(state.selected, $("#dSerial").value.trim()), "Pack dispensed. A second scan of this code will be flagged.");
+  if (e.target.id === "verifyForm") showVerdict(verifyPack($("#vGtin").value, $("#vLot").value, $("#vSerial").value));
+});
+
+renderPatient();
+seed().then(() => {
+  $("#vGtin").value = GTIN; $("#vLot").value = "INS-2026-0412"; $("#vSerial").value = "SN500123";
+  showVerdict(verifyPack(GTIN, "INS-2026-0412", "SN500123"));
+  render();
+});
+</script>

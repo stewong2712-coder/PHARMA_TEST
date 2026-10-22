@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PharmaChain Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Same visual system as the offline console (index.html). */
+:root {
+  --bg: #f3f6f8; --surface: #ffffff; --sunk: #e8eef2; --line: #d3dde4; --ink: #142630; --ink-2: #4d6270;
+  --accent: #0a6c8f; --accent-ink: #ffffff; --accent-soft: #dcedf4; --band: #d9eef0;
+  --good: #1e7d4f; --good-soft: #dff1e7; --warn: #a8640a; --warn-soft: #f8ebd4; --bad: #b3261e; --bad-soft: #f8e1df;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d171d; --surface: #13212a; --sunk: #0f1c24; --line: #24394a; --ink: #e2ecf1; --ink-2: #93a9b6;
+  --accent: #4fb3d9; --accent-ink: #062330; --accent-soft: #143444; --band: #133a40;
+  --good: #5cc08e; --good-soft: #143528; --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f07a70; --bad-soft: #3d1a17; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d171d; --surface: #13212a; --sunk: #0f1c24; --line: #24394a; --ink: #e2ecf1; --ink-2: #93a9b6;
+  --accent: #4fb3d9; --accent-ink: #062330; --accent-soft: #143444; --band: #133a40;
+  --good: #5cc08e; --good-soft: #143528; --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f07a70; --bad-soft: #3d1a17; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding-block: 10px; }
+.brand { font: 700 24px var(--f-display); letter-spacing: .02em; display: flex; align-items: baseline; gap: 8px; }
+.brand small { font: 400 11px var(--f-mono); color: var(--ink-2); }
+.livepill { font: 600 12px var(--f-display); letter-spacing: .08em; text-transform: uppercase; background: var(--good-soft); color: var(--good); padding: 2px 8px; border-radius: 999px; }
+.chain { font: 12px var(--f-mono); color: var(--ink-2); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+nav.views { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+nav.views button, nav.views a, .role button { font: 600 14px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: var(--r); cursor: pointer; text-decoration: none; }
+nav.views button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.role button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-block: 14px 6px; }
+.label { font: 600 12px var(--f-display); text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+.role { display: flex; flex-wrap: wrap; gap: 4px; }
+.who { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+main { padding-block: 8px 48px; }
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } nav.views { margin-left: 0; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.stack { display: grid; gap: 16px; }
+h2 { font: 700 20px/1.2 var(--f-display); letter-spacing: .02em; margin: 0 0 10px; }
+h3 { font: 600 15px/1.3 var(--f-body); margin: 14px 0 8px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--ink-2); font-size: 13px; }
+.mono { font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere; }
+.batches { display: grid; gap: 8px; }
+.bitem { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.bitem[aria-current="true"] { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.bitem .lot { font: 500 13px var(--f-mono); }
+.bitem .meta { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); }
+.pill { display: inline-flex; font: 600 12px var(--f-display); text-transform: uppercase; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.pill.Received, .pill.Manufactured { background: var(--good-soft); color: var(--good); }
+.pill.InTransit { background: var(--accent-soft); color: var(--accent); }
+.pill.Quarantined { background: var(--warn-soft); color: var(--warn); }
+.pill.Recalled { background: var(--bad-soft); color: var(--bad); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin: 10px 0 6px; }
+.fact .k { font: 600 11px var(--f-display); text-transform: uppercase; letter-spacing: .09em; color: var(--ink-2); }
+.fact .v { font-size: 14px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.chartbox { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunk); padding: 8px; }
+svg text { font-family: var(--f-mono); }
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; position: relative; padding-bottom: 12px; }
+.timeline li::before { content: ""; position: absolute; left: 7px; top: 14px; bottom: 0; width: 2px; background: var(--line); }
+.timeline li:last-child::before { display: none; }
+.timeline .node { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--accent); background: var(--surface); margin-top: 2px; }
+.timeline .node.warn { border-color: var(--warn); } .timeline .node.bad { border-color: var(--bad); }
+.timeline .t { font-size: 14px; } .timeline .d { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+form { display: grid; gap: 10px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
+input { font: 14px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 7px 9px; width: 100%; min-width: 0; }
+input.mono { font-family: var(--f-mono); }
+.btn { font: 700 14px var(--f-body); border-radius: var(--r); padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.note { font-size: 13px; padding: 8px 10px; border-radius: var(--r); background: var(--sunk); }
+.note.err { background: var(--bad-soft); color: var(--bad); } .note.ok { background: var(--good-soft); color: var(--good); } .note.warn { background: var(--warn-soft); color: var(--warn); }
+.activity { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100vw - 32px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: var(--r); font-size: 13px; z-index: 20; display: grid; gap: 4px; }
+.activity a { color: var(--surface); }
+.patient { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+.phone { border: 1px solid var(--line); border-radius: 22px; background: var(--surface); padding: 18px; display: grid; gap: 14px; }
+.samples { display: flex; flex-wrap: wrap; gap: 6px; }
+.samples button { font: 13px var(--f-body); border: 1px dashed var(--line); background: var(--sunk); color: var(--ink); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.verdict { border-radius: 14px; padding: 18px; display: grid; gap: 8px; }
+.verdict .big { font: 700 32px/1.05 var(--f-display); }
+.verdict.ok { background: var(--good-soft); color: var(--good); } .verdict.warn { background: var(--warn-soft); color: var(--warn); } .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+.verdict .detail { color: var(--ink); font-size: 14px; }
+.spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">PharmaChain <span class="livepill">Live</span> <small>Ethereum Sepolia test network</small></div>
+    <div class="chain" id="chainInfo">Connecting…</div>
+    <nav class="views" aria-label="Views">
+      <button data-view="portal" aria-pressed="true">Stakeholder portal</button>
+      <button data-view="patient" aria-pressed="false">Patient check</button>
+      <a href="index.html">Offline demo</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="setupError" hidden class="note err" style="margin-top:16px"></div>
+
+  <section id="v-portal">
+    <div class="sub">
+      <span class="label">Acting as</span>
+      <div class="role" id="roles"></div>
+      <span class="who" id="who"></span>
+    </div>
+    <main class="grid">
+      <div class="stack">
+        <div class="panel" id="actionPanel"></div>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Batches on the blockchain</h2><button class="btn ghost" id="refresh" type="button">Refresh</button></div>
+          <div class="batches" id="batchList" style="margin-top:10px"><p class="muted">Loading from the blockchain…</p></div>
+        </div>
+      </div>
+      <div class="panel" id="detail"><p class="muted">Select a batch.</p></div>
+    </main>
+  </section>
+
+  <section id="v-patient" hidden>
+    <main class="patient">
+      <div class="phone">
+        <div>
+          <div class="label">Check your medicine</div>
+          <h2 style="margin:4px 0 0">Enter the code printed on the pack</h2>
+          <p class="muted">This reads the real contract on the Sepolia blockchain. It is free and needs no wallet.</p>
+        </div>
+        <div class="samples" id="samples"></div>
+        <form id="verifyForm">
+          <div class="row2">
+            <label for="vGtin">GTIN (01)<input id="vGtin" class="mono" required></label>
+            <label for="vLot">Lot (10)<input id="vLot" class="mono" required></label>
+          </div>
+          <label for="vSerial">Serial (21)<input id="vSerial" class="mono" required></label>
+          <button class="btn" type="submit">Check this pack</button>
+        </form>
+        <div id="verdict"></div>
+      </div>
+    </main>
+  </section>
+</div>
+<div class="activity" id="activity" hidden role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="deployment.js"></script>
+<script>
+// -----------------------------------------------------------------------------
+// PharmaChain Live: talks to the deployed PharmaChain contract.
+// Reads go through a public RPC endpoint. Writes are signed by the demo wallets
+// created by scripts/deploy-live.js (test ETH only), so visitors need no wallet.
+// -----------------------------------------------------------------------------
+const D = window.PHARMACHAIN_DEPLOYMENT;
+const STATUS = ["None", "Manufactured", "InTransit", "Received", "Quarantined", "Recalled", "Exhausted"];
+const VERDICT = ["Genuine", "GenuineAlreadyDispensed", "UnknownSerial", "UnknownBatch", "Recalled", "Quarantined", "Expired"];
+const ROLES = [
+  ["manufacturer", "Manufacturer"], ["distributor", "Distributor"], ["pharmacy", "Pharmacy"],
+  ["inspector", "QA inspector"], ["regulator", "Regulator"],
+];
+const FRIENDLY = {
+  NotCustodian: "This organisation does not hold the batch.",
+  NotPendingCustodian: "This shipment is not addressed to this organisation.",
+  InvalidRecipient: "That organisation cannot receive the batch at this stage.",
+  BadStatus: "The batch is not in the right state for this action.",
+  Expired: "The batch has expired.",
+  InvalidProof: "This serial is not part of the batch. Possible counterfeit.",
+  AlreadyDispensed: "This serial was already dispensed. Possible copied code.",
+  BatchExists: "A batch with this GTIN and lot already exists. Use a different lot.",
+  InvalidInput: "Check the values: min must be below max, quantity above 0, expiry in the future.",
+  SensorNotBound: "The temperature report was not signed by this batch's logger.",
+  StaleNonce: "This temperature report was already submitted.",
+  BadWindow: "The temperature window is invalid.",
+  AccessControlUnauthorizedAccount: "This organisation does not have the role needed for this action.",
+};
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const short = (h) => (h && h.length > 14 ? h.slice(0, 8) + "…" + h.slice(-4) : h);
+const fmtT = (s) => new Date(Number(s) * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+const fmtD = (s) => new Date(Number(s) * 1000).toISOString().slice(0, 10);
+const txLink = (h) => (D.explorer ? `<a href="${D.explorer}/tx/${h}" target="_blank" rel="noopener">${short(h)}</a>` : `<span class="mono">${short(h)}</span>`);
+const addrLink = (a) => (D.explorer ? `<a class="mono" href="${D.explorer}/address/${a}" target="_blank" rel="noopener">${short(a)}</a>` : `<span class="mono">${short(a)}</span>`);
+
+const state = { view: "portal", role: "manufacturer", selected: null, batches: [], busy: false };
+let provider, reader, wallets = {}, orgByAddr = {};
+
+// ---- Serial numbers and Merkle proofs (same algorithm as @openzeppelin/merkle-tree) ----
+const coder = ethers.AbiCoder.defaultAbiCoder();
+const serialsFor = (n) => Array.from({ length: n }, (_, i) => `SN${String(i + 1).padStart(4, "0")}`);
+const leafHash = (s) => ethers.keccak256(ethers.keccak256(coder.encode(["string"], [s])));
+const hashPair = (a, b) => ethers.keccak256(ethers.concat(a < b ? [a, b] : [b, a]));
+const treeCache = {};
+function serialTree(qty) {
+  if (treeCache[qty]) return treeCache[qty];
+  const leaves = serialsFor(qty).map((s) => ({ s, h: leafHash(s) })).sort((x, y) => (x.h < y.h ? -1 : x.h > y.h ? 1 : 0));
+  const n = leaves.length, tree = new Array(2 * n - 1);
+  const index = {};
+  leaves.forEach((l, i) => { tree[tree.length - 1 - i] = l.h; index[l.s] = tree.length - 1 - i; });
+  for (let i = tree.length - 1 - n; i >= 0; i--) tree[i] = hashPair(tree[2 * i + 1], tree[2 * i + 2]);
+  const proof = (serial) => {
+    let i = index[serial]; const p = [];
+    if (i === undefined) return [];
+    while (i > 0) { p.push(tree[i % 2 === 1 ? i + 1 : i - 1]); i = Math.floor((i - 1) / 2); }
+    return p;
+  };
+  return (treeCache[qty] = { root: tree[0], proof, has: (s) => s in index });
+}
+const batchIdOf = (gtin, lot) => ethers.keccak256(coder.encode(["string", "string"], [gtin, lot]));
+
+// ---- Connecting -------------------------------------------------------------
+async function connect() {
+  for (const url of D.rpcUrls) {
+    try {
+      const p = new ethers.JsonRpcProvider(url, D.chainId, { staticNetwork: true, cacheTimeout: -1 });
+      await p.getBlockNumber();
+      provider = p; break;
+    } catch { /* try the next endpoint */ }
+  }
+  if (!provider) throw new Error("Could not reach the blockchain. Check your internet connection and refresh.");
+  reader = new ethers.Contract(D.contract, D.abi, provider);
+  for (const [role, w] of Object.entries(D.demoWallets)) {
+    wallets[role] = new ethers.Wallet(w.privateKey, provider);
+    orgByAddr[w.address.toLowerCase()] = w.org;
+  }
+  orgByAddr[D.admin.toLowerCase()] = "Consortium administrator";
+}
+const orgOf = (a) => orgByAddr[(a || "").toLowerCase()] || short(a);
+const roleOfAddr = (a) => Object.keys(D.demoWallets).find((r) => D.demoWallets[r].address.toLowerCase() === (a || "").toLowerCase());
+
+// ---- Reading the chain ------------------------------------------------------
+async function loadBatches() {
+  const n = Number(await reader.batchCount());
+  const ids = await Promise.all(Array.from({ length: n }, (_, i) => reader.batchIdAt(i)));
+  state.batches = await Promise.all(ids.map(async (id) => ({ id, ...(await reader.getBatch(id)).toObject() })));
+  if (!state.selected && state.batches.length) state.selected = state.batches[0].id;
+}
+const blockTimes = {};
+async function loadHistory(batchId) {
+  const latest = await provider.getBlockNumber();
+  const logs = [];
+  for (let from = D.deployBlock; from <= latest; from += 40000) {
+    const to = Math.min(from + 39999, latest);
+    logs.push(...(await provider.getLogs({ address: D.contract, topics: [null, batchId], fromBlock: from, toBlock: to })));
+  }
+  const events = [];
+  for (const l of logs) {
+    let ev; try { ev = reader.interface.parseLog(l); } catch { continue; }
+    if (!blockTimes[l.blockNumber]) blockTimes[l.blockNumber] = (await provider.getBlock(l.blockNumber)).timestamp;
+    events.push({ name: ev.name, args: ev.args, tx: l.transactionHash, at: blockTimes[l.blockNumber] });
+  }
+  return events;
+}
+
+// ---- Sending transactions ---------------------------------------------------
+function activity(html, hideAfter) {
+  const a = $("#activity"); a.innerHTML = html; a.hidden = false;
+  clearTimeout(activity.t); if (hideAfter) activity.t = setTimeout(() => (a.hidden = true), hideAfter);
+}
+function explain(e) {
+  const name = e?.revert?.name || (() => { try { return reader.interface.parseError(e?.data)?.name; } catch { return null; } })();
+  if (name) return FRIENDLY[name] || name;
+  if (/insufficient funds/i.test(e?.message || "")) return "This demo wallet has run out of test ETH. Ask the owner to top it up.";
+  return e?.shortMessage || e?.message || String(e);
+}
+async function send(role, label, fn, ...args) {
+  const c = reader.connect(wallets[role]);
+  await c[fn].staticCall(...args); // dry run first: shows a clear reason without spending gas
+  activity(`<div><span class="spinner"></span>${esc(label)}</div><div>Signing as ${esc(D.demoWallets[role].org)}…</div>`);
+  let tx;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const nonce = await provider.getTransactionCount(wallets[role].address, "pending");
+      tx = await c[fn](...args, { nonce });
+      break;
+    } catch (e) {
+      // Another visitor may have just used the same demo wallet: wait and retry with a fresh nonce.
+      if (attempt < 2 && /nonce|replacement/i.test(e?.message || "")) { await new Promise((r) => setTimeout(r, 4000)); continue; }
+      throw e;
+    }
+  }
+  activity(`<div><span class="spinner"></span>${esc(label)}</div><div>Sent ${txLink(tx.hash)}. Waiting for the next block (about 12 seconds)…</div>`);
+  const rc = await tx.wait();
+  activity(`<div>${esc(label)}: confirmed in block ${rc.blockNumber}.</div><div>${txLink(tx.hash)}</div>`, 9000);
+  return rc;
+}
+async function run(task) {
+  if (state.busy) return;
+  state.busy = true; renderActions();
+  try { await task(); await refresh(); }
+  catch (e) { activity(`<div><strong>Not done:</strong> ${esc(explain(e))}</div>`, 9000); }
+  finally { state.busy = false; renderActions(); }
+}
+
+// ---- Actions (one per contract function) ------------------------------------
+const selected = () => state.batches.find((b) => b.id === state.selected);
+async function createBatch(f) {
+  const qty = Number(f.qty);
+  if (!(qty >= 1 && qty <= 200)) throw new Error("Use between 1 and 200 packs in the demo.");
+  const input = {
+    gtin: f.gtin, lot: f.lot, expiry: Math.floor(Date.parse(f.expiry) / 1000), quantity: qty,
+    minTempDeci: Math.round(f.min * 10), maxTempDeci: Math.round(f.max * 10), excursionToleranceSec: Math.round(f.tol * 60),
+    serialRoot: serialTree(qty).root, docsCid: "not uploaded (live demo)",
+  };
+  await send("manufacturer", `Register batch ${f.lot}`, "createBatch", input);
+  state.selected = batchIdOf(f.gtin, f.lot);
+}
+const ship = (b, from, to) => send(from, `Ship ${b.lot} to ${D.demoWallets[to].org}`, "initiateTransfer", b.id, D.demoWallets[to].address, ethers.id(`T3|${b.lot}|${from}->${to}|${Date.now()}`));
+const accept = (b, role) => send(role, `Accept ${b.lot}`, "acceptTransfer", b.id);
+async function runTrip(b, peak, minutesOut) {
+  const holder = roleOfAddr(b.custodian);
+  if (!holder) throw new Error("The current holder is not one of the demo organisations.");
+  const logger = ethers.Wallet.createRandom();
+  await send(holder, `Fit a new temperature logger to ${b.lot}`, "bindSensor", b.id, logger.address);
+  const now = (await provider.getBlock("latest")).timestamp;
+  const outWindows = Math.min(3, Math.ceil(minutesOut / 15));
+  for (let i = 0; i < 3; i++) {
+    const hot = i >= 3 - outWindows && outWindows > 0;
+    const t = {
+      batchId: b.id, windowStart: now - 2700 + i * 900, windowEnd: now - 1800 + i * 900,
+      minTempDeci: hot ? Math.round(Number(b.maxTempDeci) - 10) : 45 + i, maxTempDeci: hot ? Math.round(peak * 10) : 56 + i,
+      readingsRoot: ethers.id(`${b.lot}-${now}-${i}`), nonce: i + 1,
+    };
+    const sig = await logger.signMessage(ethers.getBytes(await reader.telemetryDigest(t)));
+    await send("oracle", `Temperature window ${i + 1} of 3 (${t.minTempDeci / 10}-${t.maxTempDeci / 10} °C)`, "recordTelemetry", t, sig);
+  }
+}
+const dispense = (b, serial) => {
+  const tree = serialTree(Number(b.quantity));
+  return send("pharmacy", `Dispense ${serial}`, "dispense", b.id, serial, tree.proof(serial));
+};
+const quarantine = (b) => send("inspector", `Quarantine ${b.lot}`, "quarantine", b.id, "Physical inspection finding");
+const release = (b) => send("inspector", `Release ${b.lot}`, "releaseFromQuarantine", b.id, `assessment-${Date.now()}`);
+const recall = (b, role) => send(role, `Recall ${b.lot}`, "recall", b.id, "Recall issued from the live demo");
+
+// ---- Rendering --------------------------------------------------------------
+function renderRoles() {
+  $("#roles").innerHTML = ROLES.map(([k, l]) => `<button type="button" data-role="${k}" aria-pressed="${state.role === k}">${l}</button>`).join("");
+  const w = D.demoWallets[state.role];
+  $("#who").innerHTML = `${esc(w.org)} · ${addrLink(w.address)} · <span id="bal">…</span>`;
+  provider.getBalance(w.address).then((v) => { const el = $("#bal"); if (el) el.textContent = `${Number(ethers.formatEther(v)).toFixed(4)} test ETH`; });
+}
+function renderList() {
+  $("#batchList").innerHTML = state.batches.map((b) => {
+    const st = STATUS[Number(b.status)];
+    const pending = b.pendingCustodian !== ethers.ZeroAddress ? ` → ${esc(orgOf(b.pendingCustodian))}` : "";
+    return `<button type="button" class="bitem" data-batch="${b.id}" aria-current="${state.selected === b.id}">
+      <span class="lot">${esc(b.lot)}</span><span class="pill ${st}">${st === "InTransit" ? "In transit" : st}</span>
+      <span class="meta">GTIN ${esc(b.gtin)} · held by ${esc(orgOf(b.custodian))}${pending}</span></button>`;
+  }).join("") || `<p class="muted">No batches yet.</p>`;
+}
+function tempChart(b, windows) {
+  const W = 640, H = 210, L = 40, R = 12, T = 14, B = 26, n = Math.max(windows.length, 1);
+  const top = Math.max(14, Math.ceil(Math.max(...windows.map((w) => w.max), 0)) + 1);
+  const x = (i) => L + (i + 0.5) * (W - L - R) / n, y = (v) => T + (top - v) / top * (H - T - B);
+  const min = Number(b.minTempDeci) / 10, max = Number(b.maxTempDeci) / 10, bw = Math.min(28, Math.max(4, (W - L - R) / n * 0.55));
+  const ticks = []; for (let v = 0; v <= top; v += 2) ticks.push(v);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px" role="img" aria-label="Signed temperature windows against the ${min} to ${max} °C range">
+    <rect x="${L}" y="${y(max)}" width="${W - L - R}" height="${y(min) - y(max)}" fill="var(--band)"/>
+    ${ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 3}" font-size="10" text-anchor="end" fill="var(--ink-2)">${v}</text>`).join("")}
+    <text x="${L + 6}" y="${y(min) - 6}" font-size="10" fill="var(--ink-2)">storage range ${min}–${max} °C</text>
+    ${windows.map((w, i) => { const out = w.min < min || w.max > max; return `<rect x="${x(i) - bw / 2}" y="${y(w.max)}" width="${bw}" height="${Math.max(2, y(w.min) - y(w.max))}" rx="2" fill="${out ? "var(--bad)" : "var(--accent)"}"><title>${fmtT(w.at)}: ${w.min}–${w.max} °C</title></rect>`; }).join("")}
+    <text x="4" y="${T + 4}" font-size="10" fill="var(--ink-2)">°C</text></svg>`;
+}
+const EVENT_TEXT = {
+  BatchCreated: (a) => [`Batch registered`, `${a.quantity} packs`, ""],
+  SensorBound: (a) => [`Temperature logger fitted`, `logger ${short(a.sensor)}`, ""],
+  TransferInitiated: (a) => [`Shipped to ${orgOf(a.to)}`, `T3 hash ${short(a.handoverDocHash)}`, ""],
+  TransferAccepted: (a) => [`Received by ${orgOf(a.to)}`, `Custody confirmed by the receiver`, ""],
+  TransferCancelled: () => [`Shipment cancelled`, "", ""],
+  TemperatureExcursion: (a) => [`Temperature excursion`, `${Number(a.totalSec) / 60} min out of range so far`, "warn"],
+  BatchQuarantined: (a) => [`Quarantined`, a.reason, "bad"],
+  BatchReleased: () => [`Released by QA`, "", ""],
+  BatchRecalled: (a) => [`Recalled by ${orgOf(a.by)}`, a.reason, "bad"],
+  UnitDispensed: () => [`Pack dispensed`, "", ""],
+};
+async function renderDetail() {
+  const b = selected();
+  if (!b) { $("#detail").innerHTML = `<p class="muted">Select a batch.</p>`; return; }
+  const st = STATUS[Number(b.status)], tol = Number(b.excursionToleranceSec), exc = Number(b.excursionSec);
+  $("#detail").innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between"><h2 style="margin:0">Lot ${esc(b.lot)}</h2><span class="pill ${st}">${st === "InTransit" ? "In transit" : st}</span></div>
+    <div class="facts">
+      <div class="fact"><div class="k">GTIN</div><div class="v mono">${esc(b.gtin)}</div></div>
+      <div class="fact"><div class="k">Expiry</div><div class="v">${fmtD(b.expiry)}</div></div>
+      <div class="fact"><div class="k">Packs dispensed</div><div class="v">${b.dispensed} / ${b.quantity}</div></div>
+      <div class="fact"><div class="k">Excursion used</div><div class="v" style="color:${exc > tol ? "var(--bad)" : exc ? "var(--warn)" : "var(--good)"}">${exc / 60} of ${tol / 60} min</div></div>
+      <div class="fact"><div class="k">Holder</div><div class="v">${esc(orgOf(b.custodian))}</div></div>
+      <div class="fact"><div class="k">Batch ID</div><div class="v mono" title="${b.id}">${short(b.id)}</div></div>
+    </div>
+    <div id="hist"><p class="muted"><span class="spinner"></span>Reading this batch's history from the blockchain…</p></div>`;
+  try {
+    const events = await loadHistory(b.id);
+    if (selected()?.id !== b.id) return;
+    const windows = events.filter((e) => e.name === "TelemetryRecorded").map((e) => ({ at: e.args.windowStart, min: Number(e.args.minTempDeci) / 10, max: Number(e.args.maxTempDeci) / 10 }));
+    const story = events.filter((e) => EVENT_TEXT[e.name]).map((e) => { const [t, d, k] = EVENT_TEXT[e.name](e.args); return { t, d, k, at: e.at, tx: e.tx }; });
+    $("#hist").innerHTML = `
+      <h3>Cold-chain record (signed 15-minute windows)</h3>
+      ${windows.length ? `<div class="chartbox">${tempChart(b, windows)}</div>` : `<p class="note">No temperature reports yet.</p>`}
+      <h3>History</h3>
+      <ol class="timeline">${story.map((e) => `<li><span class="node ${e.k}"></span><div><div class="t">${esc(e.t)}</div><div class="d">${fmtT(e.at)}${e.d ? " · " + esc(e.d) : ""} · tx ${txLink(e.tx)}</div></div></li>`).join("")}</ol>`;
+  } catch (e) {
+    $("#hist").innerHTML = `<p class="note warn">Could not read the history right now: ${esc(explain(e))}</p>`;
+  }
+}
+function renderActions() {
+  const r = state.role, b = selected(), dis = state.busy ? "disabled" : "";
+  const st = b ? STATUS[Number(b.status)] : null;
+  const holder = b ? roleOfAddr(b.custodian) : null, pendingTo = b ? roleOfAddr(b.pendingCustodian) : null;
+  let h = "";
+  if (r === "manufacturer") {
+    const nextLot = `LIVE-${new Date().toISOString().slice(5, 10).replace("-", "")}-${String(state.batches.length + 1).padStart(2, "0")}`;
+    h = `<h2>Register a batch</h2>
+      <form id="createForm">
+        <div class="row2"><label for="cGtin">GTIN<input id="cGtin" class="mono" value="${esc(D.gtin)}" required></label><label for="cLot">Lot<input id="cLot" class="mono" value="${nextLot}" required></label></div>
+        <div class="row2"><label for="cExp">Expiry<input id="cExp" type="date" value="2028-06-30" required></label><label for="cQty">Packs (1 to 200)<input id="cQty" type="number" min="1" max="200" value="50" required></label></div>
+        <div class="row2"><label for="cMin">Min °C<input id="cMin" type="number" step="0.5" value="2" required></label><label for="cMax">Max °C<input id="cMax" type="number" step="0.5" value="8" required></label></div>
+        <label for="cTol">Excursion tolerance (minutes)<input id="cTol" type="number" min="0" value="30" required></label>
+        <p class="muted">Packs get serials SN0001, SN0002 and so on. Only their Merkle root is written to the chain.</p>
+        <button class="btn" type="submit" ${dis}>Register batch on Sepolia</button>
+      </form>`;
+    if (b && holder === "manufacturer" && (st === "Manufactured" || st === "Received")) h += `<h3>Selected: ${esc(b.lot)}</h3><div class="actions"><button class="btn ghost" data-act="ship-dist" ${dis}>Ship to distributor</button></div>`;
+    if (b && st !== "Recalled") h += `<div class="actions"><button class="btn danger" data-act="recall-man" ${dis}>Recall ${esc(b.lot)}</button></div>`;
+  } else if (r === "distributor") {
+    h = `<h2>Distribution desk</h2>`;
+    const inbound = state.batches.filter((x) => roleOfAddr(x.pendingCustodian) === "distributor" && STATUS[Number(x.status)] === "InTransit");
+    h += `<h3>Inbound consignments</h3>${inbound.map((x) => `<div class="actions"><button class="btn" data-act="accept" data-id="${x.id}" ${dis}>Accept ${esc(x.lot)}</button></div>`).join("") || `<p class="muted">Nothing waiting for you.</p>`}`;
+    if (b && st === "InTransit") h += `<h3>Road leg for ${esc(b.lot)}</h3>
+      <form id="tripForm"><div class="row2"><label for="tPeak">Peak °C<input id="tPeak" type="number" step="0.1" value="11.5"></label><label for="tMin">Minutes above range (0 to 45)<input id="tMin" type="number" min="0" max="45" step="15" value="45"></label></div>
+      <p class="muted">Fits a new logger, then sends 3 signed 15-minute reports. Each one is a real transaction, so this takes about a minute.</p>
+      <button class="btn" type="submit" ${dis}>Send temperature reports</button></form>`;
+    if (b && holder === "distributor" && st === "Received") h += `<div class="actions" style="margin-top:10px"><button class="btn ghost" data-act="ship-pharm" ${dis}>Ship ${esc(b.lot)} to pharmacy</button></div>`;
+  } else if (r === "pharmacy") {
+    const inbound = state.batches.filter((x) => roleOfAddr(x.pendingCustodian) === "pharmacy" && STATUS[Number(x.status)] === "InTransit");
+    h = `<h2>Pharmacy counter</h2>${inbound.map((x) => `<div class="actions"><button class="btn" data-act="accept" data-id="${x.id}" ${dis}>Accept ${esc(x.lot)}</button></div>`).join("")}
+      <form id="dispForm"><label for="dSerial">Scan a pack serial for ${b ? esc(b.lot) : "the selected batch"}<input id="dSerial" class="mono" value="SN0007"></label>
+      <p class="muted">Try SN0042 on lot INS-2026-0412 (already dispensed) or SN9999 (not in the batch).</p>
+      <button class="btn" type="submit" ${dis}>Dispense</button></form>`;
+  } else if (r === "inspector") {
+    h = `<h2>Quality decisions</h2>${b ? `<p>Selected: <span class="mono">${esc(b.lot)}</span></p>
+      <div class="actions"><button class="btn" data-act="release" ${st !== "Quarantined" || state.busy ? "disabled" : ""}>Release after assessment</button>
+      <button class="btn ghost" data-act="quarantine" ${["Quarantined", "Recalled"].includes(st) || state.busy ? "disabled" : ""}>Quarantine</button></div>` : `<p class="muted">Select a batch.</p>`}`;
+  } else if (r === "regulator") {
+    h = `<h2>Regulator</h2><p class="muted">The regulator can recall any batch. Every pack of a recalled lot shows Recalled to pharmacists and patients.</p>
+      ${b && st !== "Recalled" ? `<div class="actions"><button class="btn danger" data-act="recall-reg" ${dis}>Recall ${esc(b.lot)}</button></div>` : ""}
+      <h3>Contract</h3><p>${addrLink(D.contract)}</p>`;
+  }
+  if (state.busy) h += `<p class="note"><span class="spinner"></span>Waiting for the blockchain…</p>`;
+  // Keep what the user typed when the panel re-renders after a refresh (except the auto-suggested lot).
+  const kept = {};
+  document.querySelectorAll("#actionPanel input").forEach((i) => { if (i.id !== "cLot") kept[i.id] = i.value; });
+  $("#actionPanel").innerHTML = h;
+  for (const [id, v] of Object.entries(kept)) { const el = document.getElementById(id); if (el) el.value = v; }
+}
+async function refresh() {
+  await loadBatches();
+  renderRoles(); renderList(); renderActions(); await renderDetail();
+  const blk = await provider.getBlockNumber();
+  $("#chainInfo").innerHTML = `Block ${blk.toLocaleString()} · contract ${addrLink(D.contract)}`;
+}
+
+// ---- Patient check ----------------------------------------------------------
+async function verify(gtin, lot, serial) {
+  const id = batchIdOf(gtin.trim(), lot.trim());
+  $("#verdict").innerHTML = `<p class="muted"><span class="spinner"></span>Checking the blockchain…</p>`;
+  let proof = [];
+  try { const b = await reader.getBatch(id); proof = serialTree(Number(b.quantity)).proof(serial.trim()); } catch { /* unknown batch */ }
+  const r = await reader.verifyPack(id, serial.trim(), proof);
+  const v = VERDICT[Number(r.verdict)];
+  const map = {
+    Genuine: ["ok", "Genuine medicine", "This pack is registered by its manufacturer, has not been dispensed before, and its batch is not on hold."],
+    GenuineAlreadyDispensed: ["warn", "Already dispensed", "This code was handed out before. If your pharmacy just gave it to you, that is expected. Otherwise the code may have been copied."],
+    UnknownSerial: ["bad", "Not recognised", "This serial is not part of the batch. Do not use it. Return it to the pharmacy."],
+    UnknownBatch: ["bad", "Not recognised", "No batch with this product number and lot exists on the blockchain."],
+    Recalled: ["bad", "Recalled", "This batch has been recalled. Do not use it. Return it to your pharmacy."],
+    Quarantined: ["bad", "Do not use", "This batch is on hold because its storage temperature went outside the safe range."],
+    Expired: ["bad", "Expired", "This medicine is past its expiry date."],
+  };
+  const [k, big, text] = map[v];
+  $("#verdict").innerHTML = `<div class="verdict ${k}" role="status"><div class="big">${big}</div><div class="detail">${text}</div>
+    ${v !== "UnknownBatch" ? `<div class="detail muted">GTIN ${esc(r.gtin)} · lot ${esc(r.lot)} · expires ${fmtD(r.expiry)} · made by ${esc(orgOf(r.manufacturer))} · excursion recorded: ${Number(r.excursionSec) ? Number(r.excursionSec) / 60 + " min" : "none"}</div>` : ""}
+    <div class="detail muted">Read live from contract ${addrLink(D.contract)}</div></div>`;
+}
+function renderSamples() {
+  const s = [["Genuine pack", D.gtin, "INS-2026-0412", "SN0007"], ["Already dispensed", D.gtin, "INS-2026-0412", "SN0042"], ["Counterfeit serial", D.gtin, "INS-2026-0412", "SN9999"], ["Heat-damaged lot", D.gtin, "INS-2026-0413", "SN0003"]];
+  $("#samples").innerHTML = s.map((x) => `<button type="button" data-sample='${JSON.stringify(x.slice(1))}'>${x[0]}</button>`).join("");
+}
+
+// ---- Events -----------------------------------------------------------------
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.view) {
+    state.view = t.dataset.view;
+    document.querySelectorAll("nav.views button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.view === state.view));
+    $("#v-portal").hidden = state.view !== "portal"; $("#v-patient").hidden = state.view !== "patient"; return;
+  }
+  if (t.dataset.role) { state.role = t.dataset.role; renderRoles(); renderActions(); return; }
+  if (t.dataset.batch) { state.selected = t.dataset.batch; renderList(); renderActions(); renderDetail(); return; }
+  if (t.dataset.sample) { const [g, l, s] = JSON.parse(t.dataset.sample); $("#vGtin").value = g; $("#vLot").value = l; $("#vSerial").value = s; verify(g, l, s).catch((err) => ($("#verdict").innerHTML = `<p class="note err">${esc(explain(err))}</p>`)); return; }
+  if (t.id === "refresh") { run(async () => {}); return; }
+  const a = t.dataset.act; if (!a) return;
+  const b = t.dataset.id ? state.batches.find((x) => x.id === t.dataset.id) : selected();
+  if (a === "ship-dist") run(() => ship(b, "manufacturer", "distributor"));
+  if (a === "ship-pharm") run(() => ship(b, "distributor", "pharmacy"));
+  if (a === "accept") run(async () => { await accept(b, state.role); state.selected = b.id; });
+  if (a === "release") run(() => release(b));
+  if (a === "quarantine") run(() => quarantine(b));
+  if (a === "recall-man") run(() => recall(b, "manufacturer"));
+  if (a === "recall-reg") run(() => recall(b, "regulator"));
+});
+document.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = e.target.id;
+  if (id === "createForm") run(() => createBatch({ gtin: $("#cGtin").value.trim(), lot: $("#cLot").value.trim(), expiry: $("#cExp").value, qty: $("#cQty").value, min: +$("#cMin").value, max: +$("#cMax").value, tol: +$("#cTol").value }));
+  if (id === "tripForm") run(() => runTrip(selected(), +$("#tPeak").value, +$("#tMin").value));
+  if (id === "dispForm") run(() => dispense(selected(), $("#dSerial").value.trim()));
+  if (id === "verifyForm") verify($("#vGtin").value, $("#vLot").value, $("#vSerial").value).catch((err) => ($("#verdict").innerHTML = `<p class="note err">${esc(explain(err))}</p>`));
+});
+
+// ---- Start ------------------------------------------------------------------
+(async () => {
+  if (!window.ethers || !D) {
+    $("#setupError").hidden = false;
+    $("#setupError").textContent = !D
+      ? "This page is not connected to a contract yet. Run scripts/deploy-live.js first; it creates web/deployment.js."
+      : "Could not load the ethers.js library. Check your internet connection and refresh.";
+    return;
+  }
+  try {
+    await connect();
+    renderSamples();
+    $("#vGtin").value = D.gtin; $("#vLot").value = "INS-2026-0412"; $("#vSerial").value = "SN0007";
+    await refresh();
+  } catch (e) {
+    $("#setupError").hidden = false; $("#setupError").textContent = explain(e);
+  }
+})();
+</script>
+</body>
+</html>

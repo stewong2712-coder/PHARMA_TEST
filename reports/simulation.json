@@ -1,0 +1,370 @@
+{
+  "generatedAt": "2026-10-19T06:58:20.448Z",
+  "network": {
+    "chainId": 31337,
+    "note": "Hardhat EVM standing in for a QBFT consortium chain"
+  },
+  "actors": {
+    "regulator": {
+      "name": "National Medicines Regulator (fictional)",
+      "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    },
+    "manufacturer": {
+      "name": "Lumora Biologics Ltd (fictional)",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    "distributor": {
+      "name": "ColdRoute Distribution (fictional)",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    "pharmacy": {
+      "name": "Westside Community Pharmacy (fictional)",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    "gateway": {
+      "name": "IoT oracle gateway",
+      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+    },
+    "inspector": {
+      "name": "QA inspector",
+      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+    }
+  },
+  "contract": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "documents": {
+    "coaCid": "bafkreias2rncyfnwustuystfsudoatl3zbk6lsbtnn6zegz5npt4s7n45e",
+    "coaKeyFingerprint": "0xd45a892a86fd31d5",
+    "t3aCid": "bafkreigdgzyflrveykl6thjuuejzmwhvxui2xi2rlzc72swgm3seu47dxi",
+    "rawSensorLogCid": "bafkreiezfq3yn5nazvleqhjydvuchqvaxeth7spk5tlqfujjyeb2ky34qi"
+  },
+  "serialisation": {
+    "packs": 1000,
+    "merkleRoot": "0x04228f354ded6256d18ce73d27e58473a45da4b4d9bb0c50c62f72c6a244fda9",
+    "proofLength": 10
+  },
+  "batches": {
+    "good": {
+      "id": "0x886f6bffa5f91871c9144a6807de912c2a00ca25c5085c641567002e1b21b804",
+      "lot": "INS-2026-0412",
+      "status": "Received",
+      "excursionSec": 900,
+      "dispensed": 1,
+      "custodian": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    },
+    "bad": {
+      "id": "0xc9fd26044cf5295cfa2e4b0deabe7d9fb934cef422b668570749e5b6e54b8092",
+      "lot": "INS-2026-0413",
+      "status": "Quarantined",
+      "excursionSec": 4500,
+      "quarantinedAtWindow": 14,
+      "downstreamAcceptBlocked": true
+    }
+  },
+  "verification": {
+    "beforeDispense": "Genuine",
+    "afterDispense": "GenuineAlreadyDispensed",
+    "counterfeitSerial": "UnknownSerial",
+    "quarantinedBatchPack": "Quarantined",
+    "verifyPackGasIfOnChain": 47789
+  },
+  "docIntegrity": {
+    "originalMatchesLedger": true,
+    "tamperedMatchesLedger": false
+  },
+  "telemetry": {
+    "A": [
+      {
+        "start": 1792393200,
+        "min": 5,
+        "max": 5.4
+      },
+      {
+        "start": 1792394100,
+        "min": 5.2,
+        "max": 5.7
+      },
+      {
+        "start": 1792395000,
+        "min": 5.4,
+        "max": 5.9
+      },
+      {
+        "start": 1792395900,
+        "min": 5.6,
+        "max": 6
+      },
+      {
+        "start": 1792396800,
+        "min": 5.5,
+        "max": 6
+      },
+      {
+        "start": 1792397700,
+        "min": 5.4,
+        "max": 5.9
+      },
+      {
+        "start": 1792398600,
+        "min": 5.1,
+        "max": 5.6
+      },
+      {
+        "start": 1792399500,
+        "min": 4.8,
+        "max": 5.3
+      },
+      {
+        "start": 1792400400,
+        "min": 4.6,
+        "max": 5
+      },
+      {
+        "start": 1792401300,
+        "min": 4.2,
+        "max": 4.7
+      },
+      {
+        "start": 1792402200,
+        "min": 4.1,
+        "max": 9.1
+      },
+      {
+        "start": 1792403100,
+        "min": 4,
+        "max": 4.4
+      },
+      {
+        "start": 1792404000,
+        "min": 4.1,
+        "max": 4.5
+      },
+      {
+        "start": 1792404900,
+        "min": 4.1,
+        "max": 4.6
+      },
+      {
+        "start": 1792405800,
+        "min": 4.4,
+        "max": 4.9
+      },
+      {
+        "start": 1792406700,
+        "min": 4.8,
+        "max": 5.2
+      },
+      {
+        "start": 1792407600,
+        "min": 5,
+        "max": 5.6
+      },
+      {
+        "start": 1792408500,
+        "min": 5.4,
+        "max": 5.7
+      },
+      {
+        "start": 1792409400,
+        "min": 5.6,
+        "max": 5.9
+      },
+      {
+        "start": 1792410300,
+        "min": 5.6,
+        "max": 6
+      },
+      {
+        "start": 1792411200,
+        "min": 5.6,
+        "max": 5.9
+      },
+      {
+        "start": 1792412100,
+        "min": 5.3,
+        "max": 5.8
+      },
+      {
+        "start": 1792413000,
+        "min": 5,
+        "max": 5.4
+      },
+      {
+        "start": 1792413900,
+        "min": 4.6,
+        "max": 5.3
+      }
+    ],
+    "B": [
+      {
+        "start": 1792393200,
+        "min": 5,
+        "max": 5.4
+      },
+      {
+        "start": 1792394100,
+        "min": 5.2,
+        "max": 5.7
+      },
+      {
+        "start": 1792395000,
+        "min": 5.4,
+        "max": 5.9
+      },
+      {
+        "start": 1792395900,
+        "min": 5.6,
+        "max": 6
+      },
+      {
+        "start": 1792396800,
+        "min": 5.5,
+        "max": 6
+      },
+      {
+        "start": 1792397700,
+        "min": 5.4,
+        "max": 5.9
+      },
+      {
+        "start": 1792398600,
+        "min": 5.1,
+        "max": 5.6
+      },
+      {
+        "start": 1792399500,
+        "min": 4.8,
+        "max": 5.3
+      },
+      {
+        "start": 1792400400,
+        "min": 4.6,
+        "max": 5
+      },
+      {
+        "start": 1792401300,
+        "min": 4.2,
+        "max": 4.7
+      },
+      {
+        "start": 1792402200,
+        "min": 4.1,
+        "max": 4.5
+      },
+      {
+        "start": 1792403100,
+        "min": 4,
+        "max": 4.4
+      },
+      {
+        "start": 1792404000,
+        "min": 4.1,
+        "max": 9.3
+      },
+      {
+        "start": 1792404900,
+        "min": 9.4,
+        "max": 11.7
+      },
+      {
+        "start": 1792405800,
+        "min": 11.8,
+        "max": 13.4
+      },
+      {
+        "start": 1792406700,
+        "min": 10.4,
+        "max": 12.6
+      },
+      {
+        "start": 1792407600,
+        "min": 5.2,
+        "max": 10.2
+      },
+      {
+        "start": 1792408500,
+        "min": 5.4,
+        "max": 5.7
+      },
+      {
+        "start": 1792409400,
+        "min": 5.6,
+        "max": 5.9
+      },
+      {
+        "start": 1792410300,
+        "min": 5.6,
+        "max": 6
+      },
+      {
+        "start": 1792411200,
+        "min": 5.6,
+        "max": 5.9
+      },
+      {
+        "start": 1792412100,
+        "min": 5.3,
+        "max": 5.8
+      },
+      {
+        "start": 1792413000,
+        "min": 5,
+        "max": 5.4
+      },
+      {
+        "start": 1792413900,
+        "min": 4.6,
+        "max": 5.3
+      }
+    ]
+  },
+  "gas": {
+    "deploy": {
+      "calls": 1,
+      "avg": 2505250,
+      "min": 2505250,
+      "max": 2505250
+    },
+    "grantRole": {
+      "calls": 5,
+      "avg": 51189,
+      "min": 51179,
+      "max": 51191
+    },
+    "createBatch": {
+      "calls": 2,
+      "avg": 343441,
+      "min": 334891,
+      "max": 351991
+    },
+    "bindSensor": {
+      "calls": 2,
+      "avg": 51028,
+      "min": 51016,
+      "max": 51040
+    },
+    "initiateTransfer": {
+      "calls": 3,
+      "avg": 85337,
+      "min": 83792,
+      "max": 88404
+    },
+    "recordTelemetry": {
+      "calls": 48,
+      "avg": 55286,
+      "min": 53070,
+      "max": 87330
+    },
+    "acceptTransfer": {
+      "calls": 2,
+      "avg": 107187,
+      "min": 107187,
+      "max": 107187
+    },
+    "dispense": {
+      "calls": 1,
+      "avg": 69433,
+      "min": 69433,
+      "max": 69433
+    }
+  }
+}

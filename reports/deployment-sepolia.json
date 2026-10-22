@@ -1,0 +1,25 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "contract": "0xA6E954F8a478A62f163A5aEAc3A8A81e0B182aB0",
+  "deployBlock": 11971223,
+  "deployTx": "0x373a4caf9f43e7d76153be68ce4ba49a824314a59d596eee89b68798ff244e9e",
+  "deployedAt": "2026-10-22T18:14:26.115Z",
+  "admin": "0x970BD8d3869967Dc09d8a842017d830680B68f65",
+  "explorer": "https://sepolia.etherscan.io",
+  "rpcUrls": [
+    "https://ethereum-sepolia-rpc.publicnode.com",
+    "https://sepolia.drpc.org",
+    "https://1rpc.io/sepolia"
+  ],
+  "gtin": "05099999000013",
+  "serialScheme": "SN0001 to SN<quantity>, 4 digits",
+  "demoWallets": {
+    "regulator": "0xbF989e9729455d1Df2390Af9F7029a4679df3f52",
+    "manufacturer": "0x0843b2C91bE545eb321dDfEe1f1D8d36f8B4Eeae",
+    "distributor": "0x36De77Be9E718c98bE8B41F5f5bE8904c6eDe633",
+    "pharmacy": "0x5C99d40d5494919300a8445aAa5CEFC5f5Ed0cde",
+    "oracle": "0xe9f23f3516CA81D0AB7367D7725F86eC44818f47",
+    "inspector": "0x4186E838ADb7F1ad0196a5D6e97797e8D282bFfC"
+  }
+}
